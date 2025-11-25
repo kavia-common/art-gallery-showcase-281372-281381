@@ -1,6 +1,6 @@
 # Ocean Gallery - React Frontend
 
-Elegant art gallery frontend built with React. Features a responsive artwork grid with category filters, a lightbox image viewer, and artist profiles. The app uses local placeholder data and does not require a backend.
+Elegant art gallery frontend built with React. Features a responsive artwork grid with category filters, a lightbox image viewer, and artist profiles. The app uses local data modules and does not require a backend.
 
 ## Features
 
@@ -85,7 +85,35 @@ The UI uses refined rounded components, soft shadows, and subtle gradients to ma
 
 ## Data and Assets
 
-The app uses in-memory placeholder data for categories, artists, and artworks (see src/App.js usePlaceholderData). Artwork images use Unsplash URLs. You can replace these URLs with your own assets.
+Local data lives in:
+- src/data/categories.js
+- src/data/artists.js
+- src/data/artworks.js
+- src/data/index.js (exports getData())
+
+Artworks include optimized thumbnails for the grid and full-size images for the lightbox:
+- thumbnailSrc: smaller image for the grid
+- imageSrc: full-size image for the lightbox
+- alt and description fields are provided for accessibility
+- credit field is shown as a small caption in the lightbox
+
+The default dataset uses license-friendly images from Unsplash via remote URLs. To replace with local files:
+
+1. Place images in:
+   public/assets/images/
+
+2. Update image paths in data files to:
+   /assets/images/<your-file>.jpg
+
+3. Prefer providing two versions per artwork:
+   - thumbnail (e.g., <name>-thumb.jpg) for the grid
+   - full (e.g., <name>-full.jpg) for the lightbox
+
+No backend is required; all data is local and static.
+
+## Content Credits
+
+Default images are sourced from Unsplash (https://unsplash.com) under the Unsplash License. Please review the license before production usage and replace assets if needed.
 
 ## Testing
 

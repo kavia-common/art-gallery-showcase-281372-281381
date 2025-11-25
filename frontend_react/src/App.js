@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
+import { getData } from './data';
 
 /**
  * PUBLIC_INTERFACE
@@ -93,89 +94,9 @@ function Navbar({ onToggleTheme }) {
 }
 
 function usePlaceholderData() {
-  // Sample categories, artists, artworks
-  const categories = useMemo(
-    () => ([
-      { id: 'abstract', name: 'Abstract' },
-      { id: 'landscape', name: 'Landscape' },
-      { id: 'portrait', name: 'Portrait' },
-      { id: 'modern', name: 'Modern' }
-    ]), []
-  );
-
-  const artists = useMemo(
-    () => ([
-      {
-        id: 'aqua-lee',
-        name: 'Aqua Lee',
-        avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=800&auto=format&fit=crop',
-        cover: 'https://images.unsplash.com/photo-1495567720989-cebdbdd97913?q=80&w=1600&auto=format&fit=crop',
-        bio: 'Aqua explores fluid forms and color harmonies inspired by ocean currents and morning light.'
-      },
-      {
-        id: 'marin-sato',
-        name: 'Marin Sato',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop',
-        cover: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
-        bio: 'Marin captures serene landscapes with delicate pastel palettes and refined composition.'
-      },
-      {
-        id: 'sol-arias',
-        name: 'Sol Arias',
-        avatar: 'https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop',
-        cover: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1600&auto=format&fit=crop',
-        bio: 'Sol blends modern portraiture with subtle gradients, focusing on human presence and light.'
-      }
-    ]), []
-  );
-
-  const artworks = useMemo(
-    () => ([
-      {
-        id: 'art-1',
-        title: 'Blush Tides',
-        imageUrl: 'https://images.unsplash.com/photo-1495562569060-2eec283d3391?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'aqua-lee',
-        categories: ['abstract', 'modern']
-      },
-      {
-        id: 'art-2',
-        title: 'Lavender Coast',
-        imageUrl: 'https://images.unsplash.com/photo-1500534312687-068f0a0244fd?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'aqua-lee',
-        categories: ['landscape']
-      },
-      {
-        id: 'art-3',
-        title: 'Gilded Horizon',
-        imageUrl: 'https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'marin-sato',
-        categories: ['landscape', 'modern']
-      },
-      {
-        id: 'art-4',
-        title: 'Portrait of Dawn',
-        imageUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'sol-arias',
-        categories: ['portrait', 'modern']
-      },
-      {
-        id: 'art-5',
-        title: 'Rosewater Echo',
-        imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'aqua-lee',
-        categories: ['abstract']
-      },
-      {
-        id: 'art-6',
-        title: 'Quiet Valley',
-        imageUrl: 'https://images.unsplash.com/photo-1500534312687-068f0a0244fd?q=80&w=1600&auto=format&fit=crop',
-        artistId: 'marin-sato',
-        categories: ['landscape']
-      }
-    ]), []
-  );
-
+  // Source from centralized local data. Keep the function name to minimize refactor surface.
+  const data = useMemo(() => getData(), []);
+  const { categories, artists, artworks } = data;
   return { categories, artists, artworks };
 }
 
@@ -201,7 +122,7 @@ function HomePage() {
 function CollectionPage() {
   const { categoryId } = useParams();
   const { categories, artists, artworks } = usePlaceholderData();
-  const filtered = artworks.filter(a => a.categories.includes(categoryId));
+  const filtered = artworks.filter(a => (a.categoryIds || a.categories || []).includes(categoryId));
   const category = categories.find(c => c.id === categoryId);
 
   return (
@@ -239,7 +160,7 @@ function ArtistProfilePage() {
     <div className="page">
       <section className="profile">
         <article className="profile-card" aria-labelledby="artist-name">
-          <img src={artist.cover} alt={`${artist.name} cover`} className="profile-cover" />
+          <img src={artist.coverSrc || artist.cover} alt={`${artist.name} cover`} className="profile-cover" />
           <div className="profile-body">
             <h2 id="artist-name" className="profile-name">{artist.name}</h2>
             <p className="profile-bio">{artist.bio}</p>
@@ -307,7 +228,7 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
   const filtered = useMemo(() => {
     let list = artworks;
     if (selectedCategory && selectedCategory !== 'all') {
-      list = list.filter(a => a.categories.includes(selectedCategory));
+      list = list.filter(a => (a.categoryIds || a.categories || []).includes(selectedCategory));
     }
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -366,14 +287,23 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
       <div ref={gridRef} className="grid" role="list">
         {filtered.map((art, idx) => {
           const artist = artists.find(a => a.id === art.artistId);
+          // Normalize artwork fields from new dataset
+          const thumb = art.thumbnailSrc || art.imageSrc || art.imageUrl;
+          const alt = art.alt || `${art.title}${artist ? ` by ${artist.name}` : ''}`;
+          const cats = art.categoryIds || art.categories || [];
           return (
             <article key={art.id} className="card" role="listitem" aria-label={art.title}>
-              <img
-                src={art.imageUrl}
-                alt={art.title}
-                className="card-img"
-                onClick={() => handleOpen(idx)}
-              />
+              <figure style={{ margin: 0 }}>
+                <img
+                  src={thumb}
+                  alt={alt}
+                  className="card-img"
+                  loading="lazy"
+                  width="100%"
+                  onClick={() => handleOpen(idx)}
+                />
+                <figcaption className="sr-only">{alt}</figcaption>
+              </figure>
               <div className="card-body">
                 <h4 className="card-title">{art.title}</h4>
                 <div className="card-meta">
@@ -386,7 +316,7 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
                       {artist.name}
                     </button>
                   ) : null}
-                  {art.categories.map(cat => (
+                  {cats.map(cat => (
                     <button
                       key={cat}
                       className="filter-btn"
@@ -449,9 +379,14 @@ function Lightbox({ items, index, onClose, onPrev, onNext, closing }) {
           <button className="lightbox-btn" onClick={onPrev} aria-label="Previous">‹</button>
           <button className="lightbox-btn" onClick={onNext} aria-label="Next">›</button>
         </div>
-        <img src={item.imageUrl} alt={item.title} />
+        <img src={item.imageSrc || item.imageUrl} alt={item.alt || item.title} />
         <div className="lightbox-info">
-          <strong>{item.title}</strong>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong>{item.title}</strong>
+            {item.credit ? (
+              <small style={{ color: '#9CA3AF' }}>{item.credit}</small>
+            ) : null}
+          </div>
           <span style={{ color: '#9CA3AF' }}>{(index + 1)} / {items.length}</span>
         </div>
       </div>
