@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 
@@ -34,15 +34,31 @@ function App() {
       <div>
         <Navbar onToggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} />
         <main className="container">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/collections/:categoryId" element={<CollectionPage />} />
-            <Route path="/artists/:artistId" element={<ArtistProfilePage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PageFade>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/collections/:categoryId" element={<CollectionPage />} />
+              <Route path="/artists/:artistId" element={<ArtistProfilePage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageFade>
         </main>
       </div>
     </Router>
+  );
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * PageFade
+ * Wraps routed content to provide a subtle fade/translate animation between routes.
+ */
+function PageFade({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="page" aria-live="polite">
+      {children}
+    </div>
   );
 }
 
@@ -163,15 +179,25 @@ function usePlaceholderData() {
   return { categories, artists, artworks };
 }
 
+/**
+ * PUBLIC_INTERFACE
+ * HomePage
+ * Home gallery page wrapper with page fade.
+ */
 function HomePage() {
   const { categories, artists, artworks } = usePlaceholderData();
   return (
-    <div>
+    <div className="page">
       <ArtworkGrid categories={categories} artists={artists} artworks={artworks} />
     </div>
   );
 }
 
+/**
+ * PUBLIC_INTERFACE
+ * CollectionPage
+ * Collection view wrapper with page fade and contextual header.
+ */
 function CollectionPage() {
   const { categoryId } = useParams();
   const { categories, artists, artworks } = usePlaceholderData();
@@ -179,7 +205,7 @@ function CollectionPage() {
   const category = categories.find(c => c.id === categoryId);
 
   return (
-    <div>
+    <div className="page">
       <section className="hero" style={{ paddingTop: 0 }}>
         <h1>{category ? `${category.name} Collection` : 'Collection'}</h1>
         <p>Curated pieces within the {category ? category.name.toLowerCase() : 'selected'} category.</p>
@@ -194,6 +220,11 @@ function CollectionPage() {
   );
 }
 
+/**
+ * PUBLIC_INTERFACE
+ * ArtistProfilePage
+ * Artist profile with related artworks.
+ */
 function ArtistProfilePage() {
   const { artistId } = useParams();
   const { artists, artworks, categories } = usePlaceholderData();
@@ -205,7 +236,7 @@ function ArtistProfilePage() {
   }
 
   return (
-    <div>
+    <div className="page">
       <section className="profile">
         <article className="profile-card" aria-labelledby="artist-name">
           <img src={artist.cover} alt={`${artist.name} cover`} className="profile-cover" />
@@ -228,7 +259,7 @@ function ArtistProfilePage() {
 
 function NotFound({ message = 'Page not found' }) {
   return (
-    <div className="hero">
+    <div className="hero page" role="status" aria-live="polite">
       <h1>404</h1>
       <p>{message}</p>
       <Link to="/" className="filter-btn" style={{ display: 'inline-block', marginTop: 10 }}>Go Home</Link>
@@ -236,15 +267,42 @@ function NotFound({ message = 'Page not found' }) {
   );
 }
 
+/**
+ * PUBLIC_INTERFACE
+ * ArtworkGrid
+ * Displays a filterable grid of artworks. Includes lightbox controls and reveal animations.
+ */
 function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }) {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState(activeCategory || 'all');
   const [query, setQuery] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [closing, setClosing] = useState(false);
+  const gridRef = useRef(null);
 
   useEffect(() => {
     setSelectedCategory(activeCategory || 'all');
   }, [activeCategory]);
+
+  // Add "reveal" animation to cards on render/filter changes
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const cards = Array.from(grid.querySelectorAll('.card'));
+    cards.forEach((card, i) => {
+      card.classList.remove('reveal');
+      // force reflow for restart
+      // eslint-disable-next-line no-unused-expressions
+      card.offsetHeight;
+      card.style.animationDelay = `${Math.min(i * 40, 240)}ms`;
+      card.classList.add('reveal');
+    });
+    return () => {
+      cards.forEach(card => {
+        card.style.animationDelay = '';
+      });
+    };
+  }, [selectedCategory, query, artworks]);
 
   const filtered = useMemo(() => {
     let list = artworks;
@@ -258,8 +316,18 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
     return list;
   }, [artworks, selectedCategory, query]);
 
-  const handleOpen = useCallback((index) => setLightboxIndex(index), []);
-  const handleClose = useCallback(() => setLightboxIndex(-1), []);
+  const handleOpen = useCallback((index) => {
+    setClosing(false);
+    setLightboxIndex(index);
+  }, []);
+  const handleClose = useCallback(() => {
+    // trigger closing animation
+    setClosing(true);
+    setTimeout(() => {
+      setLightboxIndex(-1);
+      setClosing(false);
+    }, 180);
+  }, []);
   const handlePrev = useCallback(() => setLightboxIndex(i => (i > 0 ? i - 1 : filtered.length - 1)), [filtered.length]);
   const handleNext = useCallback(() => setLightboxIndex(i => (i < filtered.length - 1 ? i + 1 : 0)), [filtered.length]);
 
@@ -286,7 +354,7 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
               style={{
                 flex: '1 1 220px',
                 minWidth: 160,
-                padding: '8px 12px',
+                padding: '9px 12px',
                 borderRadius: 12,
                 border: '1px solid var(--border)',
                 outline: 'none'
@@ -295,7 +363,7 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
           </div>
         </>
       )}
-      <div className="grid" role="list">
+      <div ref={gridRef} className="grid" role="list">
         {filtered.map((art, idx) => {
           const artist = artists.find(a => a.id === art.artistId);
           return (
@@ -341,13 +409,19 @@ function ArtworkGrid({ categories, artists, artworks, activeCategory, noHeader }
           onClose={handleClose}
           onPrev={handlePrev}
           onNext={handleNext}
+          closing={closing}
         />
       )}
     </section>
   );
 }
 
-function Lightbox({ items, index, onClose, onPrev, onNext }) {
+/**
+ * PUBLIC_INTERFACE
+ * Lightbox
+ * Modal image viewer with keyboard navigation and fade/scale transitions.
+ */
+function Lightbox({ items, index, onClose, onPrev, onNext, closing }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') onClose();
@@ -362,10 +436,16 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
   if (!item) return null;
 
   return (
-    <div className="lightbox-backdrop" role="dialog" aria-modal="true" aria-label={`${item.title} viewer`} onClick={onClose}>
-      <div className="lightbox" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="lightbox-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${item.title} viewer`}
+      onClick={onClose}
+    >
+      <div className={`lightbox ${closing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="lightbox-btn close-btn" onClick={onClose} aria-label="Close">✕</button>
-        <div className="lightbox-controls">
+        <div className="lightbox-controls" aria-hidden="false">
           <button className="lightbox-btn" onClick={onPrev} aria-label="Previous">‹</button>
           <button className="lightbox-btn" onClick={onNext} aria-label="Next">›</button>
         </div>

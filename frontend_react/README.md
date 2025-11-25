@@ -9,6 +9,7 @@ Elegant art gallery frontend built with React. Features a responsive artwork gri
 - Artist profile pages with bio and related artworks
 - Navigation bar with routes for Home, Collections, and Artists
 - Elegant "Ocean Professional" theme using soft pastels and gradients
+- Subtle micro-interactions and accessible animations
 - Environment variables read from `.env` but not required for functionality
 - Runs on port 3000 by default (Create React App)
 
@@ -71,6 +72,16 @@ Theme variables are defined in src/App.css:
 - text: #374151
 
 The UI uses refined rounded components, soft shadows, and subtle gradients to match the Elegant Ocean Professional style.
+
+## Animations and Accessibility
+
+- Micro-interactions: buttons, nav links, cards, and images have hover/active states with gentle motion.
+- Grid reveal: artwork cards fade/scale-in with a small stagger when loading or when filters/search change.
+- Lightbox: open/close transitions use a fade + scale effect; ESC and arrow keys are supported.
+- Page transitions: route changes fade in subtly.
+- Reduced motion: the app honors `prefers-reduced-motion`; animations and transitions are disabled when users prefer less motion.
+- Focus visibility: keyboard users see a high-contrast focus outline using the primary accent color.
+- Performance: animations use opacity/transform with GPU-friendly transitions and minimal JS—no additional dependencies.
 
 ## Data and Assets
 
