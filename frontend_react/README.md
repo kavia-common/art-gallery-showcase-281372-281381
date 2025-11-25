@@ -1,82 +1,88 @@
-# Lightweight React Template for KAVIA
+# Ocean Gallery - React Frontend
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+Elegant art gallery frontend built with React. Features a responsive artwork grid with category filters, a lightbox image viewer, and artist profiles. The app uses local placeholder data and does not require a backend.
 
 ## Features
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Responsive grid of artworks with category filters and search
+- Lightbox modal with next/previous navigation and keyboard support
+- Artist profile pages with bio and related artworks
+- Navigation bar with routes for Home, Collections, and Artists
+- Elegant "Ocean Professional" theme using soft pastels and gradients
+- Environment variables read from `.env` but not required for functionality
+- Runs on port 3000 by default (Create React App)
 
 ## Getting Started
 
-In the project directory, you can run:
+1. Install dependencies
 
-### `npm start`
+   npm install
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2. Start the development server (port can be overridden with REACT_APP_PORT)
 
-### `npm test`
+   REACT_APP_PORT=3000 npm start
 
-Launches the test runner in interactive watch mode.
+   Open http://localhost:3000 in your browser.
 
-### `npm run build`
+3. Build for production
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   npm run build
 
-## Customization
+## Routes
 
-### Colors
+- / — Home gallery (all artworks with filters)
+- /collections/:categoryId — Filtered view (e.g., /collections/abstract)
+- /artists/:artistId — Artist profile (e.g., /artists/aqua-lee)
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+## Environment variables
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+The following are read for future compatibility but not required:
 
-### Components
+- REACT_APP_API_BASE
+- REACT_APP_BACKEND_URL
+- REACT_APP_FRONTEND_URL
+- REACT_APP_WS_URL
+- REACT_APP_NODE_ENV
+- REACT_APP_NEXT_TELEMETRY_DISABLED
+- REACT_APP_ENABLE_SOURCE_MAPS
+- REACT_APP_PORT
+- REACT_APP_TRUST_PROXY
+- REACT_APP_LOG_LEVEL
+- REACT_APP_HEALTHCHECK_PATH
+- REACT_APP_FEATURE_FLAGS
+- REACT_APP_EXPERIMENTS_ENABLED
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+You may create a `.env` file with any of these, for example:
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+REACT_APP_PORT=3000
 
-## Learn More
+Note: Do not commit secrets. The app does not rely on a backend for data.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Design and Theming
 
-### Code Splitting
+Theme variables are defined in src/App.css:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- primary: #F472B6
+- secondary: #F59E0B
+- success: #10B981
+- error: #EF4444
+- background: #FDF2F8
+- surface: #FFFFFF
+- text: #374151
 
-### Analyzing the Bundle Size
+The UI uses refined rounded components, soft shadows, and subtle gradients to match the Elegant Ocean Professional style.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Data and Assets
 
-### Making a Progressive Web App
+The app uses in-memory placeholder data for categories, artists, and artworks (see src/App.js usePlaceholderData). Artwork images use Unsplash URLs. You can replace these URLs with your own assets.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Testing
 
-### Advanced Configuration
+Run tests:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+npm test
 
-### Deployment
+## Notes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- This app uses react-router-dom v6 for routing.
+- No backend is required; all data is local and static for now.
